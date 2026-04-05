@@ -4,11 +4,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const cookieOptions = {
-  httpOnly: true,                                  
-  secure: process.env.NODE_ENV === "production",    
-  sameSite: "Strict",                               
-  maxAge: 7 * 24 * 60 * 60 * 1000,                   
-  path: "/"
+  httpOnly: true,
+  secure:   process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Strict',
+  maxAge:   7 * 24 * 60 * 60 * 1000,
+  path:     '/',
 };
 
 const register = async (req, res) => {
