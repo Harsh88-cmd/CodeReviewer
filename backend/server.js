@@ -7,6 +7,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const reviewRoutes = require("./routes/review");
 
+
 const app = express();
 
 const allowedOrigins = [
@@ -26,7 +27,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/review", reviewRoutes);
 
-// app.get("/", (req, res) => res.json({ message: "CodeReview AI API running" }));
 
 mongoose
   .connect(process.env.MONGO_URI)
