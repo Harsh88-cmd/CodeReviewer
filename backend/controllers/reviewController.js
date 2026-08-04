@@ -1,89 +1,82 @@
-const Review = require('../models/Review');
-const Groq = require('groq-sdk');
+require("dotenv").config();
 
-// Replace Gemini client with Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const Review = require('../models/Review');
+const crypto = require('crypto');
+const reviewQueue = require('../queue/reviewQueue');
 
 const SUPPORTED_LANGUAGES = ['javascript', 'typescript', 'python', 'java', 'cpp', 'go', 'rust'];
 
+function normalizeCode(code) {
+  return code
+    .replace(/\/\/.*$/gm, '')           // single-line comments hatao (//)
+    .replace(/\/\*[\s\S]*?\*\//g, '')   // multi-line comments hatao (/* */)
+    .replace(/#.*$/gm, '')              // python-style comments (#) bhi hatao
+    .replace(/\s+/g, ' ')               // multiple spaces/tabs/newlines ko single space
+    .trim();
+}
+
 const createReview = async (req, res) => {
+  console.log(" NEW createReview CODE RUNNING ");
+
   const { code, language = 'javascript' } = req.body;
 
+  //
   if (!code || !code.trim()) {
     return res.status(400).json({ error: 'Code is required.' });
   }
+
   if (!SUPPORTED_LANGUAGES.includes(language)) {
     return res.status(400).json({ error: 'Unsupported language.' });
   }
+
   if (code.length > 5000) {
     return res.status(400).json({ error: 'Code too long (max 5000 characters).' });
   }
 
   try {
-    const prompt = `You are a strict code reviewer.
-Review this ${language} code and respond ONLY with a valid JSON object.
-No markdown, no backticks, no extra text outside the JSON.
 
-JSON structure:
-{
-  "score": <number 0-100>,
-  "issues": [
-    {
-      "type": "error" | "warning" | "good" | "info",
-      "line": "<e.g. Line 3>",
-      "title": "<short title>",
-      "desc": "<clear explanation>",
-      "fix": "<fixed code or empty string>"
-    }
-  ]
-}
+    // Create hash for deduplication + caching
+    const hash = crypto
+      .createHash('sha256')
+      .update(normalizeCode(code))
+      .digest('hex');
 
-Code to review:
-\`\`\`${language}
-${code}
-\`\`\``;
-
-    // Groq API call
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,  // lower = more consistent JSON output
+    //  Add job to queue
+    const job = await reviewQueue.add(
+      'review-job',
+      {
+        userId: req.user._id,
+        code,
+        language,
+        hash
+      },
+      {
+        jobId: hash,
+        removeOnComplete: { age: 3600 }, // ✅ change ye line
+        removeOnFail: true
+      }
+    );
+    return res.status(202).json({
+      message: 'Review job queued',
+      jobId: job.id
     });
-
-    // Extract text — same idea as before
-    const raw = response.choices[0].message.content;
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
-
-    // Save to MongoDB
-    const saved = await Review.create({
-      user : req.user._id,
-      code,
-      language,
-      score: result.score,
-      issues: result.issues,
-    });
-
-    return res.status(201).json(saved);
 
   } catch (err) {
+
     console.error('createReview error:', err.message);
 
     if (err.message.includes('429')) {
       return res.status(429).json({ error: 'Too many requests. Please wait a moment.' });
-    }
-    if (err instanceof SyntaxError) {
-      return res.status(500).json({ error: 'AI returned invalid response. Try again.' });
     }
 
     return res.status(500).json({ error: 'Review failed. Please try again.' });
   }
 };
 
-// Keep getHistory, getReviewById, deleteReview exactly the same
+// getHistory, getReviewById, deleteReview 
 const getHistory = async (req, res) => {
   try {
-    const history = await Review.find({user:req.user._id})
+    const history = await Review.find({ user: req.user._id })
       .select('language score createdAt issues')
       .sort({ createdAt: -1 })
       .limit(20);
@@ -96,8 +89,10 @@ const getHistory = async (req, res) => {
 
 const getReviewById = async (req, res) => {
   try {
-    const review = await Review.findOne({_id: req.params.id,
-  user: req.user._id, });
+    const review = await Review.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
     if (!review) {
       return res.status(404).json({ error: 'Review not found.' });
     }
@@ -110,8 +105,10 @@ const getReviewById = async (req, res) => {
 
 const deleteReview = async (req, res) => {
   try {
-    const data = await Review.findOneAndDelete({_id: req.params.id,
-  user: req.user._id,});
+    const data = await Review.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id,
+    });
     if (!data) {
       return res.status(404).json({ error: 'Review not found.' });
     }
@@ -122,4 +119,29 @@ const deleteReview = async (req, res) => {
   }
 };
 
-module.exports = { createReview, getHistory, getReviewById, deleteReview };
+const getJobStatus = async (req, res) => {
+  try {
+    const job = await reviewQueue.getJob(req.params.jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found.' });
+    }
+
+    const state = await job.getState();
+
+    if (state === 'completed') {
+      return res.json({ status: 'completed', result: job.returnvalue });
+    }
+
+    if (state === 'failed') {
+      return res.json({ status: 'failed', error: job.failedReason });
+    }
+
+    return res.json({ status: state }); // waiting, active, delayed
+  } catch (err) {
+    console.error('getJobStatus error:', err.message);
+    return res.status(500).json({ error: 'Failed to check job status.' });
+  }
+};
+
+module.exports = { createReview, getHistory, getReviewById, deleteReview, getJobStatus };

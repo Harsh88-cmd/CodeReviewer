@@ -6,36 +6,45 @@ const reviewSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+
   code: {
     type: String,
     required: true     
   },
+
   language: {
     type: String,
     default: 'javascript'  
   },
+
+  hash: {                   
+    type: String,
+    index: true
+  },
+
   score: {
     type: Number
   },
-  issues: [            
+
+  issues: [
     {
       type: {
         type: String,
-        enum: ['error', 'warning', 'good', 'info'] 
+        enum: ['error', 'warning', 'good', 'info']
       },
-      line:  String,
+      line: String,
       title: String,
-      desc:  String,
-      fix:   String,
+      desc: String,
+      fix: String
     }
   ],
+
   createdAt: {
     type: Date,
-    default: Date.now 
+    default: Date.now
   }
 });
 
-// Model = the actual class you use to interact with DB
 const Review = mongoose.model('Review', reviewSchema);
 
 module.exports = Review;

@@ -96,7 +96,7 @@ export default function CodeEditor({
     );
   }, [issues]); // ← issues is the dependency
 
-  // ✅ Step 2 — useEffect AFTER applyDecorations
+  //  Step 2 — useEffect AFTER applyDecorations
   useEffect(() => {
     if (!editorRef.current || !monacoRef.current) return;
     applyDecorations();

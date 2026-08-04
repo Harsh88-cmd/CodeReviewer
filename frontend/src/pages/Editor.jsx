@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import Navbar from "../components/Navbar";
 import CodeEditor from "../components/review/CodeEditor";
 import ReviewPanel from "../components/review/ReviewPanel";
-import { reviewCode } from "../api/review";
+import { reviewCode, checkReviewStatus } from "../api/review";
 
 const DEFAULT_CODE = `async function fetchUser(id) {
   var res = await fetch('/api/users/' + id)
@@ -32,19 +32,43 @@ export default function Editor() {
     }
     setLoading(true);
     setError(null);
+    setResult(null); // clear previous result
     setView("panel"); // on mobile → auto switch to panel after review
 
     try {
-      const data = await reviewCode(code, language);
-      setResult(data);
-      toast.success("Review complete!");
+      const { jobId } = await reviewCode(code, language);
+      pollJobStatus(jobId);
     } catch (err) {
       const msg = err?.response?.data?.error || "Review failed. Please try again.";
       setError(msg);
       toast.error(msg);
-    } finally {
       setLoading(false);
     }
+  };
+
+  const pollJobStatus = (jobId) => {
+    const interval = setInterval(async () => {
+      try {
+        const data = await checkReviewStatus(jobId);
+
+        if (data.status === "completed") {
+          clearInterval(interval);
+          setResult(data.result);
+          setLoading(false);
+          toast.success("Review complete!");
+        } else if (data.status === "failed") {
+          clearInterval(interval);
+          setError(data.error || "Review failed.");
+          toast.error("Review failed.");
+          setLoading(false);
+        }
+        // agar 'waiting' ya 'active' hai, to interval chalta rahega
+      } catch (err) {
+        clearInterval(interval);
+        setError("Failed to check review status.");
+        setLoading(false);
+      }
+    }, 1500); // har 1.5 second check karega
   };
 
   return (

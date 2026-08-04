@@ -15,3 +15,6 @@ export const fetchReview = (id) =>
 // Delete a review
 export const deleteReview = (id) =>
   axiosInstance.delete(`/review/${id}`).then(r => r.data);
+
+export const checkReviewStatus = (jobId) =>
+  axiosInstance.get(`/review/status/${jobId}`).then(r => r.data);
