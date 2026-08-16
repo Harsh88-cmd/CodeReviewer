@@ -22,18 +22,18 @@
 
 ## ✨ What is CodeReview AI?
 
-**CodeReview AI** is a full-stack web application that uses **Groq AI (LLaMA 3)** to review your code in real time.
+**CodeReview AI** is a full-stack web application that uses **Groq AI (LLaMA 3.3 70B)** to review source code and provide detailed, actionable feedback.
 
-Paste any code snippet, select your language, and get back a detailed review with:
+Paste your code, select the programming language, and get a structured AI-powered review with:
 
-- 🔴 **Errors** — critical bugs that will break your code
-- 🟡 **Warnings** — bad practices you should fix
-- 🟢 **Good parts** — what you did right
+- 🔴 **Errors** — critical bugs that may break your code
+- 🟡 **Warnings** — bad practices and potential problems
+- 🟢 **Good parts** — things implemented correctly
 - 🔵 **Info** — suggestions to improve code quality
 
-Every review is saved to your personal history — so you can track your growth as a developer over time.
+Every review is saved to your personal history so you can track your progress as a developer.
 
-You can also **chat with the AI about any generated review**, ask follow-up questions, understand the detected issues, and get suggestions for improving your code.
+The application also includes an **AI Review Chatbot**, allowing users to ask follow-up questions about their generated review and understand the feedback in more detail.
 
 ---
 
@@ -41,11 +41,11 @@ You can also **chat with the AI about any generated review**, ask follow-up ques
 
 <div align="center">
 
-| Editor | Review Panel | History |
-|--------|-------------|---------|
-| Monaco Editor (VS Code) | AI Issue Cards | Past Reviews |
-| Syntax Highlighting | Score Bar | Delete Reviews |
-| Auto Suggestions | Fixed Code Tab | Detail View |
+| Editor | Review Panel | AI Chat | History |
+|--------|-------------|---------|---------|
+| Monaco Editor | AI Issue Cards | Review Q&A | Past Reviews |
+| Syntax Highlighting | Score Bar | Context-aware AI | Delete Reviews |
+| Auto Suggestions | Fixed Code Tab | Follow-up Questions | Detail View |
 
 </div>
 
@@ -62,21 +62,23 @@ You can also **chat with the AI about any generated review**, ask follow-up ques
 ✅ Auto Suggestions      — IntelliSense for all languages
 ✅ Line Highlights       — Red/amber highlights on error lines
 ✅ Review History        — All reviews saved to MongoDB
+✅ Hash-based Dedup      — Detect repeated review requests
+✅ Redis Caching         — Avoid unnecessary AI API calls
+✅ BullMQ Job Queue      — Asynchronous background processing
 ✅ JWT Authentication    — Secure login with httpOnly cookies
 ✅ Protected Routes      — Auth middleware on all API endpoints
 ✅ Fully Responsive      — Works on mobile, tablet, desktop
 ✅ Dark Theme            — Easy on the eyes
-```
 
 ---
 
 ## 💬 AI Review Chatbot
 
-One of the key features of **CodeReview AI** is the AI-powered chatbot that allows users to discuss their generated code reviews.
+CodeReview AI includes an **AI-powered chatbot for individual code reviews**.
 
-After receiving a review, users can ask follow-up questions about the specific review instead of submitting the code again.
+After receiving a review, users can ask follow-up questions about the generated feedback without submitting the code again.
 
-The chatbot uses the existing review context to generate relevant and contextual responses.
+The chatbot uses the selected review as context to generate more relevant and personalized responses.
 
 ### Example Questions
 
@@ -122,9 +124,21 @@ Context-aware AI response
 Response displayed in chat
 ```
 
+### Example
+
+```text
+User:
+Why is this solution inefficient?
+
+AI:
+The main issue is the nested loop, which results in
+O(n²) time complexity. You can improve it by using
+a HashMap and reduce the complexity to O(n).
+```
+
 This makes CodeReview AI more than a one-time code reviewer.
 
-It acts as an **interactive AI coding assistant** that helps developers understand, debug, optimize, and improve their code.
+It works as an **interactive AI coding assistant** that helps developers understand, debug, optimize, and improve their code.
 
 ---
 
@@ -148,9 +162,14 @@ It acts as an **interactive AI coding assistant** that helps developers understa
 ![Mongoose](https://img.shields.io/badge/Mongoose-ODM-880000?style=flat-square)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens)
 
-### AI & Deployment
+### AI & Backend Processing
 
 ![Groq](https://img.shields.io/badge/Groq-LLaMA_3.3-f55036?style=flat-square)
+![Redis](https://img.shields.io/badge/Redis-Cache-dc382d?style=flat-square&logo=redis)
+![BullMQ](https://img.shields.io/badge/BullMQ-Job_Queue-e53935?style=flat-square)
+
+### Deployment
+
 ![Render](https://img.shields.io/badge/Render-Deployed-46e3b7?style=flat-square&logo=render)
 
 </div>
@@ -165,7 +184,7 @@ It acts as an **interactive AI coding assistant** that helps developers understa
 │                                                             │
 │   ┌──────────────┐        ┌─────────────────────┐          │
 │   │ Monaco Editor│        │    Review Panel      │          │
-│   │              │        │ ScoreBar + IssueCards│          │
+│   │              │        │ Score + Issue Cards │          │
 │   └──────┬───────┘        └──────────┬──────────┘          │
 │          │                           │                      │
 │          │                  ┌────────▼─────────┐            │
@@ -174,7 +193,7 @@ It acts as an **interactive AI coding assistant** that helps developers understa
 │          │                  └────────┬─────────┘            │
 │          │                           │                      │
 │          └────────────┬──────────────┘                      │
-│                       │ Axios (withCredentials)             │
+│                       │ Axios                              │
 └───────────────────────┼─────────────────────────────────────┘
                         │
                         ▼
@@ -184,19 +203,169 @@ It acts as an **interactive AI coding assistant** that helps developers understa
 │   ┌────────────┐   ┌──────────────┐   ┌─────────────┐     │
 │   │Auth Routes │   │Review Routes │   │   Protect   │     │
 │   │/register   │   │POST /review  │   │  Middleware │     │
-│   │/login      │   │GET  /history │   │ (JWT verify)│     │
-│   │/logout     │   │GET  /:id     │   └─────────────┘     │
+│   │/login      │   │GET /history  │   │ JWT Verify  │     │
+│   │/logout     │   │GET /:id      │   └─────────────┘     │
 │   └────────────┘   │POST /:id/chat│                         │
 │                    └──────┬───────┘                         │
 │                           │                                 │
-│              ┌────────────┼─────────────┐                   │
-│              ▼            ▼             ▼                   │
-│        ┌──────────┐ ┌──────────┐ ┌───────────┐            │
-│        │ MongoDB  │ │  Groq AI │ │   bcrypt  │            │
-│        │  Atlas   │ │ LLaMA 3  │ │    JWT    │            │
-│        └──────────┘ └──────────┘ └───────────┘            │
+│                           ▼                                 │
+│                  ┌──────────────────┐                       │
+│                  │ Generate Hash    │                       │
+│                  │ SHA-256 / Hash   │                       │
+│                  └────────┬─────────┘                       │
+│                           │                                 │
+│                           ▼                                 │
+│                  ┌──────────────────┐                       │
+│                  │      Redis       │                       │
+│                  │  Cache Lookup    │                       │
+│                  └────────┬─────────┘                       │
+│                           │                                 │
+│                      Cache Miss                            │
+│                           │                                 │
+│                           ▼                                 │
+│                  ┌──────────────────┐                       │
+│                  │      BullMQ      │                       │
+│                  │    Job Queue     │                       │
+│                  └────────┬─────────┘                       │
+│                           │                                 │
+│                           ▼                                 │
+│                  ┌──────────────────┐                       │
+│                  │  Review Worker   │                       │
+│                  └────────┬─────────┘                       │
+│                           │                                 │
+│                           ▼                                 │
+│                  ┌──────────────────┐                       │
+│                  │ Groq / LLaMA 3.3 │                       │
+│                  │       70B        │                       │
+│                  └────────┬─────────┘                       │
+│                           │                                 │
+│                    ┌──────┴───────┐                         │
+│                    ▼              ▼                         │
+│               ┌─────────┐   ┌──────────┐                    │
+│               │ MongoDB │   │  Redis   │                    │
+│               │ Reviews │   │  Cache   │                    │
+│               └─────────┘   └──────────┘                    │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🔐 Hashing + Redis + BullMQ
+
+To improve performance and avoid unnecessary AI API calls, CodeReview AI uses a combination of **hashing, Redis caching, and BullMQ background processing**.
+
+### 1. 🔐 Hashing for Duplicate Detection
+
+When code is submitted for review, the application generates a hash from the submitted code.
+
+```text
+User Code
+    ↓
+Generate Hash
+    ↓
+Unique Cache Key
+```
+
+A cache key can be generated using the hash:
+
+```text
+cache:review:<hash>
+```
+
+The hash allows the application to identify repeated review requests.
+
+---
+
+### 2. 🚀 Redis Caching
+
+Redis is used as a fast cache for previously generated AI reviews.
+
+```text
+Code Submitted
+      ↓
+Generate Hash
+      ↓
+Check Redis
+      │
+      ├─────────────── Cache Hit
+      │                      ↓
+      │                Return Cached Review
+      │
+      └─────────────── Cache Miss
+                             ↓
+                       Create BullMQ Job
+```
+
+If the same code has already been reviewed and the result exists in Redis, the application can reuse the cached review instead of making another AI request.
+
+This helps reduce:
+
+- Unnecessary AI API calls
+- AI processing time
+- Response latency for repeated requests
+- AI API usage/cost
+
+---
+
+### 3. 🔄 BullMQ Background Processing
+
+When a review is not available in Redis, the application creates a **BullMQ job**.
+
+The job is processed by a separate review worker.
+
+```text
+Client
+  ↓
+Express API
+  ↓
+Generate Hash
+  ↓
+Check Redis
+  ↓
+Cache Miss
+  ↓
+BullMQ Queue
+  ↓
+Review Worker
+  ↓
+Groq / LLaMA 3.3 70B
+  ↓
+Generate Review
+  ↓
+Store Review
+  ↓
+Cache Result in Redis
+```
+
+This separates potentially slower AI processing from the main API logic and provides a foundation for processing multiple review jobs asynchronously.
+
+---
+
+### 🧩 Why This Architecture?
+
+```text
+Hashing
+   ↓
+Identify repeated requests
+
+Redis
+   ↓
+Fast access to cached reviews
+
+BullMQ
+   ↓
+Asynchronous background processing
+
+Worker
+   ↓
+Handles AI review jobs
+
+LLM
+   ↓
+Generates intelligent code feedback
+```
+
+Together, these components create a more efficient architecture for an AI-powered code review system.
 
 ---
 
@@ -206,41 +375,57 @@ It acts as an **interactive AI coding assistant** that helps developers understa
 CodeReviewer/
 ├── 📂 backend/
 │   ├── 📂 controllers/
-│   │   ├── authController.js      # register, login, logout
-│   │   └── reviewController.js    # review, history, delete, AI chat
+│   │   ├── authController.js
+│   │   └── reviewController.js
+│   │
 │   ├── 📂 middleware/
-│   │   └── auth.js                # JWT protect middleware
+│   │   └── auth.js
+│   │
 │   ├── 📂 models/
-│   │   ├── User.js                # Mongoose user schema
-│   │   └── Review.js              # Mongoose review schema
+│   │   ├── User.js
+│   │   └── Review.js
+│   │
 │   ├── 📂 routes/
-│   │   ├── auth.js                # /api/auth routes
-│   │   └── review.js              # /api/review routes
-│   ├── server.js                  # Express entry point
+│   │   ├── auth.js
+│   │   └── review.js
+│   │
+│   ├── 📂 workers/
+│   │   └── reviewWorker.js
+│   │
+│   ├── 📂 queues/
+│   │   └── reviewQueue.js
+│   │
+│   ├── server.js
 │   └── package.json
 │
 └── 📂 frontend/
     ├── 📂 src/
     │   ├── 📂 api/
-    │   │   ├── axios.js           # Axios instance + interceptors
-    │   │   └── review.js          # Review + chat API calls
+    │   │   ├── axios.js
+    │   │   └── review.js
+    │   │
     │   ├── 📂 components/
     │   │   ├── Navbar.jsx
     │   │   ├── ProtectedRoute.jsx
+    │   │   ├── ChatBot.jsx
     │   │   └── 📂 review/
-    │   │       ├── CodeEditor.jsx  # Monaco editor + highlights
-    │   │       ├── ReviewPanel.jsx # Score + issue cards
-    │   │       ├── IssueCard.jsx   # Single issue display
-    │   │       ├── ScoreBar.jsx    # Animated score bar
-    │   │       └── suggestions.js  # Language snippets
+    │   │       ├── CodeEditor.jsx
+    │   │       ├── ReviewPanel.jsx
+    │   │       ├── IssueCard.jsx
+    │   │       ├── ScoreBar.jsx
+    │   │       └── suggestions.js
+    │   │
     │   ├── 📂 context/
-    │   │   └── AuthContext.jsx    # Global auth state
+    │   │   └── AuthContext.jsx
+    │   │
     │   ├── 📂 pages/
     │   │   ├── Login.jsx
     │   │   ├── Signup.jsx
-    │   │   ├── Editor.jsx         # Main editor page
-    │   │   └── HistoryPage.jsx    # Review history
-    │   └── App.jsx                # Routes
+    │   │   ├── Editor.jsx
+    │   │   └── HistoryPage.jsx
+    │   │
+    │   └── App.jsx
+    │
     └── package.json
 ```
 
@@ -250,18 +435,21 @@ CodeReviewer/
 
 ### Prerequisites
 
-```bash
-Node.js >= 18.0.0
-MongoDB (local or Atlas)
-Groq API Key (free at console.groq.com)
+```text
+Node.js >= 18
+MongoDB
+Redis
+Groq API Key
 ```
 
-### 1. Clone the repo
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Harsh88-cmd/CodeReviewer.git
 cd CodeReviewer
 ```
+
+---
 
 ### 2. Setup Backend
 
@@ -270,15 +458,22 @@ cd backend
 npm install
 ```
 
-Create `backend/.env`:
+Create a `.env` file:
 
 ```env
 PORT=3000
 NODE_ENV=development
-MONGO_URI=mongodb://localhost:27017/codereviewai
+
+MONGO_URI=your_mongodb_connection_string
+
 JWT_SECRET=your_secret_key
+
 GROQ_API_KEY=your_groq_api_key
+
 CLIENT_URL=http://localhost:5173
+
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
 ```
 
 Start the backend:
@@ -287,14 +482,58 @@ Start the backend:
 npm run dev
 ```
 
-### 3. Setup Frontend
+---
+
+### 3. Start Redis
+
+If Redis is installed locally, start your Redis server.
+
+Or using Docker:
+
+```bash
+docker run -d --name redis -p 6379:6379 redis
+```
+
+Test the connection:
+
+```bash
+docker exec -it redis redis-cli ping
+```
+
+Expected output:
+
+```text
+PONG
+```
+
+---
+
+### 4. Start the Review Worker
+
+Run the worker separately:
+
+```bash
+npm run worker
+```
+
+Use the actual worker script configured in your `package.json`.
+
+---
+
+### 5. Setup Frontend
 
 ```bash
 cd frontend
 npm install
 ```
 
-Create `frontend/.env`:
+Create:
+
+```text
+frontend/.env
+```
+
+Example:
 
 ```env
 VITE_API_URL=http://localhost:3000/api
@@ -306,7 +545,9 @@ Start the frontend:
 npm run dev
 ```
 
-### 4. Open the app
+---
+
+### 6. Open the Application
 
 ```text
 http://localhost:5173
@@ -314,18 +555,30 @@ http://localhost:5173
 
 ---
 
-## 🔐 API Endpoints
+## 🔑 Environment Variables
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/register` | Register new user | ❌ |
-| POST | `/api/auth/login` | Login user | ❌ |
-| POST | `/api/auth/logout` | Logout user | ❌ |
-| POST | `/api/review` | Submit code for AI review | ✅ |
-| GET | `/api/review/history` | Get user's review history | ✅ |
-| GET | `/api/review/:id` | Get single review | ✅ |
-| DELETE | `/api/review/:id` | Delete a review | ✅ |
-| POST | `/api/review/:id/chat` | Ask AI questions about a review | ✅ |
+Never commit real API keys, database credentials, JWT secrets, or other private credentials to GitHub.
+
+Add these to `.gitignore`:
+
+```gitignore
+node_modules/
+.env
+.env.local
+dist/
+```
+
+Provide a safe `.env.example` instead:
+
+```env
+PORT=
+MONGO_URI=
+JWT_SECRET=
+GROQ_API_KEY=
+CLIENT_URL=
+REDIS_HOST=
+REDIS_PORT=
+```
 
 ---
 
@@ -333,41 +586,70 @@ http://localhost:5173
 
 ```text
 1. User pastes code in Monaco Editor
-         ↓
-2. Clicks "Review →" button
-         ↓
-3. Frontend sends POST /api/review
-         ↓
-4. protect middleware verifies JWT cookie
-         ↓
-5. Backend sends code to Groq AI (LLaMA 3.3 70B)
-   with a carefully engineered prompt
-         ↓
-6. Groq returns structured JSON:
-   {
-      score: 62,
-      issues: [
-        {
-          type: "error",
-          line: "Line 3",
-          title: "...",
-          fix: "..."
-        },
-        {
-          type: "warning",
-          line: "Line 2",
-          ...
-        }
-      ]
-   }
-         ↓
-7. Review saved to MongoDB with user ID
-         ↓
-8. Frontend shows:
-   • Score bar (0-100)
-   • Issue cards (error/warning/good/info)
-   • Red/amber line highlights in editor
+              ↓
+2. User selects programming language
+              ↓
+3. User clicks "Review"
+              ↓
+4. Frontend sends POST /api/review
+              ↓
+5. JWT authentication is verified
+              ↓
+6. Backend generates a hash of the code
+              ↓
+7. Redis is checked using the hash
+              ↓
+       ┌──────┴──────┐
+       │             │
+    Cache Hit     Cache Miss
+       │             │
+       ▼             ▼
+ Return cached    Create BullMQ Job
+ review               ↓
+                   Worker
+                     ↓
+                Groq AI
+                     ↓
+             LLaMA 3.3 70B
+                     ↓
+             Structured Review
+                     ↓
+              MongoDB + Redis
+                     ↓
+                 Response
 ```
+
+The AI generates structured feedback such as:
+
+```json
+{
+  "score": 62,
+  "issues": [
+    {
+      "type": "error",
+      "line": "Line 3",
+      "title": "Potential bug",
+      "fix": "..."
+    },
+    {
+      "type": "warning",
+      "line": "Line 2",
+      "title": "Inefficient approach",
+      "fix": "..."
+    }
+  ]
+}
+```
+
+The frontend then displays:
+
+- Score bar
+- Error cards
+- Warning cards
+- Good parts
+- Information cards
+- Line highlights
+- Fixed code suggestions
 
 ---
 
@@ -375,42 +657,41 @@ http://localhost:5173
 
 ```text
 1. User opens an existing review
-         ↓
-2. User enters a question
-         ↓
+              ↓
+2. User asks a question
+              ↓
 3. Frontend sends:
    POST /api/review/:id/chat
-         ↓
+              ↓
 4. Backend verifies authenticated user
-         ↓
+              ↓
 5. Backend retrieves the selected review
-         ↓
-6. Review context + user question
+              ↓
+6. Review context + question
    are sent to Groq AI
-         ↓
-7. LLaMA 3.3 70B generates a contextual answer
-         ↓
-8. Answer is returned to the frontend
-         ↓
-9. User can continue the conversation
+              ↓
+7. LLaMA 3.3 70B generates answer
+              ↓
+8. Response returned to frontend
+              ↓
+9. User can continue asking questions
 ```
 
-### Why Review Context Matters
-
-Instead of treating every chatbot question as a completely new request, the backend can use the selected review as context.
-
-For example:
+The chatbot can answer questions such as:
 
 ```text
-User:
-"Why is this solution inefficient?"
+"Why is this approach slow?"
 
-AI:
-"The main issue is the nested loop at line 12...
-You can reduce the complexity by using a HashMap..."
+"Can you explain this error?"
+
+"How can I optimize this code?"
+
+"What is the time complexity?"
+
+"Show me a better solution."
+
+"Explain this issue like a beginner."
 ```
-
-This allows the chatbot to answer questions specifically about the code and feedback the user is currently viewing.
 
 ---
 
@@ -418,26 +699,39 @@ This allows the chatbot to answer questions specifically about the code and feed
 
 | Language | Syntax Highlighting | AI Review | Auto Suggestions |
 |----------|--------------------:|----------:|-----------------:|
-| JavaScript | ✅ | ✅ | ✅ (built-in) |
-| TypeScript | ✅ | ✅ | ✅ (built-in) |
-| Python | ✅ | ✅ | ✅ (custom) |
-| Java | ✅ | ✅ | ✅ (custom) |
-| C++ | ✅ | ✅ | ✅ (custom) |
-| Go | ✅ | ✅ | ✅ (custom) |
-| Rust | ✅ | ✅ | ✅ (custom) |
+| JavaScript | ✅ | ✅ | ✅ Built-in |
+| TypeScript | ✅ | ✅ | ✅ Built-in |
+| Python | ✅ | ✅ | ✅ Custom |
+| Java | ✅ | ✅ | ✅ Custom |
+| C++ | ✅ | ✅ | ✅ Custom |
+| Go | ✅ | ✅ | ✅ Custom |
+| Rust | ✅ | ✅ | ✅ Custom |
 
 ---
 
-## 🔒 Security Features
+## 🔐 Security Features
 
 ```text
-✅ JWT stored in httpOnly cookies    → XSS attacks can't steal tokens
-✅ bcrypt password hashing           → passwords never stored plain
-✅ Auth middleware on all routes     → unauthorized access blocked
-✅ User-scoped data                  → users only see their own reviews
-✅ CORS whitelist                    → only frontend can call backend
-✅ Input validation                  → code length + language checks
-✅ Error handling                    → no sensitive info leaked
+✅ JWT stored in httpOnly cookies
+   → Helps protect tokens from client-side JavaScript access
+
+✅ bcrypt password hashing
+   → Passwords are never stored as plain text
+
+✅ Auth middleware on protected routes
+   → Unauthorized users cannot access protected resources
+
+✅ User-scoped review data
+   → Users can only access their own reviews
+
+✅ CORS whitelist
+   → Controls which frontend origins can access the backend
+
+✅ Input validation
+   → Validates code and language input
+
+✅ Error handling
+   → Prevents sensitive internal information from being exposed
 ```
 
 ---
@@ -445,12 +739,17 @@ This allows the chatbot to answer questions specifically about the code and feed
 ## 📱 Responsive Design
 
 ```text
-Desktop  → Editor + Review panel side by side
+Desktop
+→ Editor + Review panel side by side
 
-Tablet   → Slightly narrower review panel
+Tablet
+→ Responsive review panel
 
-Mobile   → Tab switcher (Editor | Review)
-           Tap "Review →" → auto switches to Review tab
+Mobile
+→ Editor / Review tab switcher
+
+AI Chat
+→ Responsive chatbot interface
 ```
 
 ---
@@ -459,27 +758,25 @@ Mobile   → Tab switcher (Editor | Review)
 
 Add screenshots of your application here.
 
-Recommended screenshots:
-
-### 1. Code Editor
+### Code Editor
 
 ```markdown
 ![Code Editor](./screenshots/code-editor.png)
 ```
 
-### 2. AI Code Review
+### AI Code Review
 
 ```markdown
 ![AI Review](./screenshots/ai-review.png)
 ```
 
-### 3. AI Review Chatbot
+### AI Review Chatbot
 
 ```markdown
 ![AI Review Chat](./screenshots/review-chat.png)
 ```
 
-### 4. Review History
+### Review History
 
 ```markdown
 ![Review History](./screenshots/review-history.png)
@@ -505,19 +802,28 @@ https://github.com/Harsh88-cmd/CodeReviewer
 
 ## 🤝 What I Learned Building This
 
-- Building a **production-ready MERN stack** app from scratch
-- **JWT authentication** with httpOnly cookies
-- **Prompt engineering** to get structured JSON from AI
-- **AI/LLM integration** using Groq and LLaMA 3.3 70B
-- Building a **context-aware AI chatbot**
-- Designing backend APIs for **review-specific AI conversations**
-- **Monaco Editor** integration and decorations API
-- **React patterns** — lifting state, component composition, custom hooks
-- **MongoDB** schema design — references vs embedded documents
-- Managing authenticated user-specific review data
-- **Deployment** on Render with environment variables
-- **Security** — CORS, auth middleware, input validation
-- Designing interactive AI-powered developer workflows
+Through this project, I learned and implemented:
+
+- Building a full-stack MERN application
+- JWT authentication with httpOnly cookies
+- REST API development
+- Prompt engineering for structured AI responses
+- Groq AI / LLaMA 3.3 70B integration
+- Building a context-aware AI chatbot
+- Review-specific AI conversations
+- Monaco Editor integration
+- React component architecture
+- MongoDB schema design
+- User-specific data management
+- Hash-based request deduplication
+- Redis caching
+- BullMQ job queues
+- Background worker architecture
+- Asynchronous AI processing
+- API performance optimization
+- CORS and backend security
+- Deployment on Render
+- Building scalable AI-powered workflows
 
 ---
 
@@ -532,10 +838,12 @@ https://github.com/Harsh88-cmd/CodeReviewer
 - RAG-based coding knowledge
 - Code execution in a secure sandbox
 - Review comparison and analytics
-- Conversation history for AI review chats
-- Persistent chat messages for each review
-- More advanced AI agents for debugging and refactoring
-- AI-powered code optimization and refactoring suggestions
+- Persistent AI chat history
+- Conversation history for each review
+- More advanced AI debugging agents
+- AI-powered refactoring
+- AI-generated optimized code
+- Repository-level code review
 
 ---
 
@@ -547,7 +855,7 @@ https://github.com/Harsh88-cmd/CodeReviewer
 
 [![GitHub](https://img.shields.io/badge/GitHub-Harsh88--cmd-181717?style=for-the-badge&logo=github)](https://github.com/Harsh88-cmd)
 
-*Built from scratch as my full-stack AI project 🚀*
+*Built from scratch as a full-stack AI project 🚀*
 
 </div>
 
@@ -555,8 +863,8 @@ https://github.com/Harsh88-cmd/CodeReviewer
 
 <div align="center">
 
-### ⭐ If you found this useful, please star the repo!
+### ⭐ If you found this project useful, please star the repository!
 
-*It helps other developers discover the project*
+*It helps other developers discover the project.*
 
 </div>
